@@ -10,19 +10,19 @@ import (
 
 func logHandler(w http.ResponseWriter, r *http.Request) {
 	log.WithFields(log.Fields{
-		"url":      r.RemoteAddr,
-		"method":   r.Method,
-		"bodySize": r.ContentLength,
-		"header":   r.Header,
-	}).Info("Response from func logHandler")
+		"url":        r.Host + r.URL.Path,
+		"reqestAddr": r.RemoteAddr,
+		"method":     r.Method,
+		"bodySize":   r.ContentLength,
+		"header":     r.Header,
+	}).Info("Received /proxy request\n")
 
 }
 
 func main() {
 	router := mux.NewRouter()
 	router.HandleFunc("/proxy", logHandler)
-	http.Handle("/", router)
 
 	fmt.Println("Server is listening")
-	http.ListenAndServe(":8080", nil)
+	log.Fatal(http.ListenAndServe(":8080", router))
 }
