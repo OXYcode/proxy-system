@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -15,7 +14,7 @@ func logHandler(w http.ResponseWriter, r *http.Request) {
 		"method":     r.Method,
 		"bodySize":   r.ContentLength,
 		"header":     r.Header,
-	}).Info("Received /proxy request\n")
+	}).Info("Received /proxy request")
 
 }
 
@@ -23,6 +22,6 @@ func main() {
 	router := mux.NewRouter()
 	router.HandleFunc("/proxy", logHandler)
 
-	fmt.Println("Server is listening")
+	log.Info("Server is listening")
 	log.Fatal(http.ListenAndServe(":8080", router))
 }
