@@ -19,9 +19,12 @@ func logHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
+	hub := newHub()
 	router := mux.NewRouter()
 	router.HandleFunc("/proxy", logHandler)
-	router.HandleFunc("/ws", wsHandler)
+	router.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
+		wsHandler(hub, w, r)
+	})
 
 	log.Info("Server is listening")
 	log.Fatal(http.ListenAndServe(":8080", router))
