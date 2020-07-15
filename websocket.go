@@ -25,6 +25,7 @@ var upgrader = websocket.Upgrader{
 
 //wsHandler upgrade connection to WebSocket
 func wsHandler(hub *Hub, w http.ResponseWriter, r *http.Request) {
+	upgrader.CheckOrigin = func(r *http.Request) bool { return true }
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Println(err)
