@@ -18,16 +18,19 @@ func newHub() *Hub {
 	}
 }
 
-var upgrager = websocket.Upgrader{
+var upgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
 	WriteBufferSize: 1024,
 }
 
+//wsHandler upgrade connection to WebSocket
 func wsHandler(hub *Hub, w http.ResponseWriter, r *http.Request) {
-	conn, err := upgrager.Upgrade(w, r, nil)
+	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Println(err)
 		return
 	}
+	//register client
 	hub.clients[conn] = true
+	log.Println(hub.clients)
 }
