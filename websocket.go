@@ -23,6 +23,19 @@ var upgrader = websocket.Upgrader{
 	WriteBufferSize: 1024,
 }
 
+//reader listens for new messages being sent to our WS endpoint
+func reader(conn *websocket.Conn) error {
+	for {
+		// read in message
+		_, p, err := conn.ReadMessage()
+		if err != nil {
+			log.Warning(err)
+			return err
+		}
+		log.Println(string(p))
+	}
+}
+
 //wsHandler upgrade connection to WebSocket
 func wsHandler(hub *Hub, w http.ResponseWriter, r *http.Request) {
 	upgrader.CheckOrigin = func(r *http.Request) bool { return true }
@@ -33,5 +46,16 @@ func wsHandler(hub *Hub, w http.ResponseWriter, r *http.Request) {
 	}
 	//register client
 	hub.clients[conn] = true
+	log.Println(hub.clients)
+
+	err = conn.WriteMessage(1, []byte("Hi Client!"))
+	if err != nil {
+		log.Println(err)
+	}
+
+	err = reader(conn)
+	if err != nil {
+		delete(hub.clients, conn)
+	}
 	log.Println(hub.clients)
 }
