@@ -3,9 +3,13 @@
 'use strict';
 
 let socket = new WebSocket("ws://localhost:8080/ws");
-
+//onopen sets ws connections with server
 socket.onopen = function () {
      console.log('socket connection opened properly');
      };
+//onmessage writes everything incoming from ws to console
+socket.onmessage = function (evt) {
+     console.log("Message received = " + evt.data);
+ };
 
 </script>
