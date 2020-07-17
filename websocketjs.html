@@ -6,11 +6,24 @@ let socket = new WebSocket("ws://localhost:8080/ws");
 //onopen sets ws connections with server
 socket.onopen = function () {
      console.log('socket connection opened properly');
+     //send JSON format message
+     socket.send(JSON.stringify({
+  greeting: "Hello from client!"
+}))
      };
 //onmessage writes everything incoming from ws to console
 socket.onmessage = function (evt) {
-     var msg = JSON.parse(evt.data)
-     console.log("Message received = " + msg);
+     var obj = JSON.parse(evt.data)
+     console.log("Message received = " + evt.data);
  };
+
+socket.onerror = function(evt) {
+  console.error("WebSocket error");
+  socket.close(); // close connection to server
+}
+
+socket.onclose = function (evt) {
+     console.log("Socket Closed Connection: ", evt);
+     };
 
 </script>

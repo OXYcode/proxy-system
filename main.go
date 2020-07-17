@@ -19,11 +19,12 @@ func logHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
+	errCh := make(chan error)
 	hub := newHub()
 	router := mux.NewRouter()
 	router.HandleFunc("/proxy", logHandler)
 	router.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
-		wsHandler(hub, w, r)
+		wsHandler(errCh, hub, w, r)
 	})
 
 	log.Info("Server is listening")
