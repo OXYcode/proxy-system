@@ -7,7 +7,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func logHandler(w http.ResponseWriter, r *http.Request) {
+func proxyHandler(w http.ResponseWriter, r *http.Request) {
 	log.WithFields(log.Fields{
 		"url":        r.Host + r.URL.Path,
 		"reqestAddr": r.RemoteAddr,
@@ -22,7 +22,7 @@ func main() {
 	errCh := make(chan error)
 	hub := newHub()
 	router := mux.NewRouter()
-	router.HandleFunc("/proxy", logHandler)
+	router.HandleFunc("/proxy", proxyHandler)
 	router.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
 		wsHandler(errCh, hub, w, r)
 	})
