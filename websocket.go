@@ -37,15 +37,16 @@ func reader(conn *websocket.Conn, errCh chan error) {
 	}
 }
 
-func writer(conn *websocket.Conn) {
-	err := conn.WriteMessage(1, []byte(`{"message": "Hi Client!"}`))
+func writer(conn *websocket.Conn, msg []byte) {
+	err := conn.WriteMessage(1, msg)
 	if err != nil {
 		log.Println(err)
 	}
 }
 
 //wsHandler upgrade connection to WebSocket
-func wsHandler(errCh chan error, hub *Hub, w http.ResponseWriter, r *http.Request) {
+func wsHandler(jsonReqChan chan []byte, errCh chan error, hub *Hub, w http.ResponseWriter, r *http.Request) {
+	greeting := []byte(`{"message": "Hi Client!"}`)
 	upgrader.CheckOrigin = func(r *http.Request) bool { return true }
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
@@ -56,7 +57,7 @@ func wsHandler(errCh chan error, hub *Hub, w http.ResponseWriter, r *http.Reques
 	hub.clients[conn] = true
 	log.Println(hub.clients)
 
-	go writer(conn)
+	go writer(conn, greeting)
 
 	go reader(conn, errCh)
 
@@ -67,5 +68,10 @@ func wsHandler(errCh chan error, hub *Hub, w http.ResponseWriter, r *http.Reques
 			log.Println(hub.clients)
 		}
 	}(errCh)
+
+	go func() {
+		msg := <-jsonReqChan
+		writer(conn, msg)
+	}()
 
 }
