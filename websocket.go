@@ -70,8 +70,10 @@ func wsHandler(jsonReqChan chan []byte, errCh chan error, hub *Hub, w http.Respo
 	}(errCh)
 
 	go func() {
-		msg := <-jsonReqChan
-		writer(conn, msg)
+		for {
+			msg := <-jsonReqChan
+			writer(conn, msg)
+		}
 	}()
 
 }
