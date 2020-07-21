@@ -24,14 +24,15 @@ var upgrader = websocket.Upgrader{
 }
 
 //reader listens for new messages being sent to our WS endpoint
-func reader(conn *websocket.Conn, errCh chan error) {
+func reader(hub *Hub, conn *websocket.Conn) {
 	for {
 		// read in message
 		_, p, err := conn.ReadMessage()
 		if err != nil {
 			log.Warning(err)
-			errCh <- err
-			return
+			delete(hub.clients, conn)
+			log.Println(hub.clients)
+			break
 		}
 		log.Println(string(p))
 	}
@@ -47,7 +48,7 @@ func writer(conn *websocket.Conn, msgChan chan []byte) {
 }
 
 //wsHandler upgrade connection to WebSocket
-func wsHandler(msgChan chan []byte, errCh chan error, hub *Hub, w http.ResponseWriter, r *http.Request) {
+func wsHandler(msgChan chan []byte, hub *Hub, w http.ResponseWriter, r *http.Request) {
 	upgrader.CheckOrigin = func(r *http.Request) bool { return true }
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
@@ -60,13 +61,5 @@ func wsHandler(msgChan chan []byte, errCh chan error, hub *Hub, w http.ResponseW
 
 	go writer(conn, msgChan)
 
-	go reader(conn, errCh)
-
-	go func(errCh chan error) {
-		err := <-errCh
-		if err != nil {
-			delete(hub.clients, conn)
-			log.Println(hub.clients)
-		}
-	}(errCh)
+	go reader(hub, conn)
 }

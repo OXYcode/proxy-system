@@ -20,6 +20,9 @@ func proxyHandler(msgChan chan []byte, w http.ResponseWriter, r *http.Request) {
 	}).Info("Received /proxy request")
 
 	target := r.Header.Get("X-OXYproxy-target")
+	if target == "" {
+		log.Warning("Target source is undefined")
+	}
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		log.Println("Error reading body", err)
@@ -41,7 +44,7 @@ func proxyHandler(msgChan chan []byte, w http.ResponseWriter, r *http.Request) {
 
 	jsonReq, err := json.Marshal(proxyReq)
 	if err != nil {
-		log.Warning(err)
+		log.Fatal(err)
 	}
 
 	msgChan <- jsonReq
@@ -49,14 +52,13 @@ func proxyHandler(msgChan chan []byte, w http.ResponseWriter, r *http.Request) {
 
 func main() {
 	msgChan := make(chan []byte)
-	errCh := make(chan error)
 	hub := newHub()
 	router := mux.NewRouter()
 	router.HandleFunc("/proxy", func(w http.ResponseWriter, r *http.Request) {
 		proxyHandler(msgChan, w, r)
 	})
 	router.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
-		wsHandler(msgChan, errCh, hub, w, r)
+		wsHandler(msgChan, hub, w, r)
 	})
 
 	log.Info("Server is listening")
