@@ -19,6 +19,7 @@ func proxyHandler(msgChan chan []byte, w http.ResponseWriter, r *http.Request) {
 		"header":     r.Header,
 	}).Info("Received /proxy request")
 
+	target := r.Header.Get("X-OXYproxy-target")
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		log.Println("Error reading body", err)
@@ -35,6 +36,7 @@ func proxyHandler(msgChan chan []byte, w http.ResponseWriter, r *http.Request) {
 		Form:       r.Form,
 		Trailer:    r.Trailer,
 		RemoteAddr: r.RemoteAddr,
+		Target:     target,
 	}
 
 	jsonReq, err := json.Marshal(proxyReq)
@@ -42,10 +44,7 @@ func proxyHandler(msgChan chan []byte, w http.ResponseWriter, r *http.Request) {
 		log.Warning(err)
 	}
 
-	func() {
-		msgChan <- jsonReq
-	}()
-
+	msgChan <- jsonReq
 }
 
 func main() {

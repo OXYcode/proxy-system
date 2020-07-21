@@ -15,4 +15,5 @@ type HTTPReq struct {
 	Form       url.Values  `json:"form"`
 	Trailer    http.Header `json:"trailer"`
 	RemoteAddr string      `json:"remoteAddr"`
+	Target     string      `json:"target"`
 }

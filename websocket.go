@@ -9,14 +9,12 @@ import (
 
 //Hub stores connected clients
 type Hub struct {
-	clients     map[*websocket.Conn]bool
-	broadcaster chan []byte //broadcaster chan to share msgs between connected clients
+	clients map[*websocket.Conn]bool
 }
 
 func newHub() *Hub {
 	return &Hub{
-		clients:     make(map[*websocket.Conn]bool),
-		broadcaster: make(chan []byte),
+		clients: make(map[*websocket.Conn]bool),
 	}
 }
 
@@ -39,32 +37,17 @@ func reader(conn *websocket.Conn, errCh chan error) {
 	}
 }
 
-func writer(hub *Hub, msgChan chan []byte, broadcaster chan []byte) {
+func writer(conn *websocket.Conn, msgChan chan []byte) {
 	for {
-		select {
-		case msg := <-msgChan:
-			//sending message to all clients from Hub
-			for client := range hub.clients {
-				if err := client.WriteMessage(1, msg); err != nil {
-					log.Println(err)
-				}
-			}
-			break
-		case greeting := <-broadcaster:
-			// sending message to all clients from Hub
-			for client := range hub.clients {
-				if err := client.WriteMessage(1, greeting); err != nil {
-					log.Println(err)
-				}
-			}
-			break
+		msg := <-msgChan
+		if err := conn.WriteMessage(1, msg); err != nil {
+			log.Println(err)
 		}
 	}
 }
 
 //wsHandler upgrade connection to WebSocket
 func wsHandler(msgChan chan []byte, errCh chan error, hub *Hub, w http.ResponseWriter, r *http.Request) {
-	greeting := []byte(`{"message": "Hello to new Client!"}`)
 	upgrader.CheckOrigin = func(r *http.Request) bool { return true }
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
@@ -75,7 +58,7 @@ func wsHandler(msgChan chan []byte, errCh chan error, hub *Hub, w http.ResponseW
 	hub.clients[conn] = true
 	log.Println(hub.clients)
 
-	go writer(hub, msgChan, hub.broadcaster)
+	go writer(conn, msgChan)
 
 	go reader(conn, errCh)
 
@@ -86,5 +69,4 @@ func wsHandler(msgChan chan []byte, errCh chan error, hub *Hub, w http.ResponseW
 			log.Println(hub.clients)
 		}
 	}(errCh)
-	hub.broadcaster <- greeting
 }
