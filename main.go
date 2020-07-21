@@ -9,7 +9,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func proxyHandler(jsonReqChan chan []byte, w http.ResponseWriter, r *http.Request) {
+func proxyHandler(msgChan chan []byte, w http.ResponseWriter, r *http.Request) {
 	//log req fields
 	log.WithFields(log.Fields{
 		"url":        r.Host + r.URL.Path,
@@ -21,7 +21,7 @@ func proxyHandler(jsonReqChan chan []byte, w http.ResponseWriter, r *http.Reques
 
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		log.Printf("Error reading body", err)
+		log.Println("Error reading body", err)
 		http.Error(w, "can't read body", http.StatusBadRequest)
 		return
 	}
@@ -42,24 +42,27 @@ func proxyHandler(jsonReqChan chan []byte, w http.ResponseWriter, r *http.Reques
 		log.Warning(err)
 	}
 
-	go func() {
-		jsonReqChan <- jsonReq
+	func() {
+		msgChan <- jsonReq
 	}()
 
 }
 
 func main() {
-	jsonReqChan := make(chan []byte)
+	msgChan := make(chan []byte)
 	errCh := make(chan error)
 	hub := newHub()
 	router := mux.NewRouter()
 	router.HandleFunc("/proxy", func(w http.ResponseWriter, r *http.Request) {
-		proxyHandler(jsonReqChan, w, r)
+		proxyHandler(msgChan, w, r)
 	})
 	router.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
-		wsHandler(jsonReqChan, errCh, hub, w, r)
+		wsHandler(msgChan, errCh, hub, w, r)
 	})
 
 	log.Info("Server is listening")
-	log.Fatal(http.ListenAndServe(":8080", router))
+	err := http.ListenAndServe(":8080", router)
+	if err != nil {
+		log.Fatal(err)
+	}
 }
