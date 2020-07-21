@@ -32,7 +32,7 @@ func reader(hub *Hub, conn *websocket.Conn) {
 			log.Warning(err)
 			delete(hub.clients, conn)
 			log.Println(hub.clients)
-			break
+			return
 		}
 		log.Println(string(p))
 	}
@@ -42,7 +42,8 @@ func writer(conn *websocket.Conn, msgChan chan []byte) {
 	for {
 		msg := <-msgChan
 		if err := conn.WriteMessage(1, msg); err != nil {
-			log.Println(err)
+			log.Warning(err)
+			return
 		}
 	}
 }

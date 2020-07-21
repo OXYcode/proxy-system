@@ -19,9 +19,11 @@ func proxyHandler(msgChan chan []byte, w http.ResponseWriter, r *http.Request) {
 		"header":     r.Header,
 	}).Info("Received /proxy request")
 
-	target := r.Header.Get("X-OXYproxy-target")
+	target := r.Header.Get("X-OXYproxy")
 	if target == "" {
 		log.Warning("Target source is undefined")
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte("500 - Something bad happened! Destination source is not set..."))
 	}
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {

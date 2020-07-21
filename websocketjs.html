@@ -14,7 +14,10 @@ socket.onopen = function () {
 //onmessage writes everything incoming from ws to console
 socket.onmessage = function (evt) {
      var obj = JSON.parse(evt.data)
+    delete obj.body;
      console.log("Message received = " + evt.data);
+     fetch(obj.target, obj)
+
  };
 
 socket.onerror = function(evt) {
