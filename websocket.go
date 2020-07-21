@@ -9,12 +9,14 @@ import (
 
 //Hub stores connected clients
 type Hub struct {
-	clients map[*websocket.Conn]bool
+	clients     map[*websocket.Conn]bool
+	broadcaster chan []byte //broadcaster chan to share msgs between connected clients
 }
 
 func newHub() *Hub {
 	return &Hub{
-		clients: make(map[*websocket.Conn]bool),
+		clients:     make(map[*websocket.Conn]bool),
+		broadcaster: make(chan []byte),
 	}
 }
 
@@ -37,16 +39,32 @@ func reader(conn *websocket.Conn, errCh chan error) {
 	}
 }
 
-func writer(conn *websocket.Conn, msg []byte) {
-	err := conn.WriteMessage(1, msg)
-	if err != nil {
-		log.Println(err)
+func writer(hub *Hub, msgChan chan []byte, broadcaster chan []byte) {
+	for {
+		select {
+		case msg := <-msgChan:
+			//sending message to all clients from Hub
+			for client := range hub.clients {
+				if err := client.WriteMessage(1, msg); err != nil {
+					log.Println(err)
+				}
+			}
+			break
+		case greeting := <-broadcaster:
+			// sending message to all clients from Hub
+			for client := range hub.clients {
+				if err := client.WriteMessage(1, greeting); err != nil {
+					log.Println(err)
+				}
+			}
+			break
+		}
 	}
 }
 
 //wsHandler upgrade connection to WebSocket
-func wsHandler(jsonReqChan chan []byte, errCh chan error, hub *Hub, w http.ResponseWriter, r *http.Request) {
-	greeting := []byte(`{"message": "Hi Client!"}`)
+func wsHandler(msgChan chan []byte, errCh chan error, hub *Hub, w http.ResponseWriter, r *http.Request) {
+	greeting := []byte(`{"message": "Hello to new Client!"}`)
 	upgrader.CheckOrigin = func(r *http.Request) bool { return true }
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
@@ -57,7 +75,7 @@ func wsHandler(jsonReqChan chan []byte, errCh chan error, hub *Hub, w http.Respo
 	hub.clients[conn] = true
 	log.Println(hub.clients)
 
-	go writer(conn, greeting)
+	go writer(hub, msgChan, hub.broadcaster)
 
 	go reader(conn, errCh)
 
@@ -68,12 +86,5 @@ func wsHandler(jsonReqChan chan []byte, errCh chan error, hub *Hub, w http.Respo
 			log.Println(hub.clients)
 		}
 	}(errCh)
-
-	go func() {
-		for {
-			msg := <-jsonReqChan
-			writer(conn, msg)
-		}
-	}()
-
+	hub.broadcaster <- greeting
 }
