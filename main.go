@@ -4,22 +4,34 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
+	"strings"
 
 	"github.com/gorilla/mux"
 	log "github.com/sirupsen/logrus"
 )
 
 func proxyHandler(msgChan chan []byte, w http.ResponseWriter, r *http.Request) {
+	mapOfHeaders := make(map[string]string)
+	mapOfTrailers := make(map[string]string)
+	for hk, hv := range r.Header {
+		stringHV := (strings.Join(hv, ""))
+		mapOfHeaders[hk] = stringHV
+	}
+	for tk, tv := range r.Trailer {
+		stringTV := (strings.Join(tv, ""))
+		mapOfTrailers[tk] = stringTV
+	}
+
 	//log req fields
 	log.WithFields(log.Fields{
 		"url":        r.Host + r.URL.Path,
 		"reqestAddr": r.RemoteAddr,
 		"method":     r.Method,
 		"bodySize":   r.ContentLength,
-		"header":     r.Header,
+		"headers":    r.Header,
 	}).Info("Received /proxy request")
 
-	target := r.Header.Get("X-OXYproxy")
+	target := r.Header.Get("X-OXYproxy-target")
 	if target == "" {
 		log.Error("Target source is undefined")
 		w.WriteHeader(http.StatusBadRequest)
@@ -36,11 +48,11 @@ func proxyHandler(msgChan chan []byte, w http.ResponseWriter, r *http.Request) {
 	proxyReq := &HTTPReq{
 		Method:     r.Method,
 		Proto:      r.Proto,
-		Header:     r.Header,
+		Headers:    mapOfHeaders,
 		Body:       string(body),
 		Host:       r.Host,
 		Form:       r.Form,
-		Trailer:    r.Trailer,
+		Trailer:    mapOfTrailers,
 		RemoteAddr: r.RemoteAddr,
 		Target:     target,
 	}

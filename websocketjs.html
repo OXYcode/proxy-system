@@ -13,20 +13,23 @@ socket.onopen = function () {
      };
 //onmessage writes everything incoming from ws to console
 socket.onmessage = function (evt) {
-     var obj = JSON.parse(evt.data)
      console.log("Message received = " + evt.data); 
      var exclusions = ['target'];
      var data = {};
+     var mode = { "mode": "no-cors"}
      var obj = JSON.parse(evt.data);
      var url = obj.target;
 
-     // наполняем data (в data попадет все кроме полей которые есть в exclusions)
      for (var key in obj) {
           if (!exclusions.includes(key)) {
                data[key] = obj[key];
-          }
-     }
-     fetch(url,{ mode: 'no-cors'},data);
+               }
+      }
+
+     if (['HEADER', 'GET'].includes(data.method.toUpperCase())) {
+     delete data.body;
+}
+     fetch(url, { ...data, mode: 'no-cors' });
  };
 
 socket.onerror = function(evt) {
