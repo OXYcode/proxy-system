@@ -16,7 +16,6 @@ socket.onmessage = function (evt) {
      console.log("Message received = " + evt.data); 
      var exclusions = ['target'];
      var data = {};
-     var mode = { "mode": "no-cors"}
      var obj = JSON.parse(evt.data);
      var url = obj.target;
 
