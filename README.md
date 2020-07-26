@@ -1,5 +1,5 @@
 # proxy-system
 ______________
 
-Development of this proof of concept was closed because of facing problems with cors policy that wasn't predicted
+Development of this proof of concept was closed due to problems with cors policy that were not predicted
 with my first steps of development. 
